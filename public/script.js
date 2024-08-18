@@ -1,24 +1,39 @@
-document.querySelector('form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const input = document.getElementById('input-field').value;
-    
-    try {
-        const response = await fetch('/api/print', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ input })
-        });
-        
-        if (response.ok) {
-            alert('Printing successful!');
+const browserPrint = new BrowserPrint();
+let selectedPrinter = null;
+
+function findPrinter() {
+    browserPrint.getDefaultDevice('printer', (device) => {
+        if (device.name === 'Unknown Device') {
+            console.error('No printer found');
         } else {
-            alert('Printing failed. Please try again.');
+            console.log('Printer found:', device.name);
+            selectedPrinter = device;
         }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('An error occurred. Please try again.');
+    });
+}
+
+document.querySelector('form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const inputText = document.getElementById('input-field').value;
+    if (selectedPrinter) {
+        const cpclCommands = `
+            ! 0 200 200 210 1
+            TEXT 4 0 30 40 ${inputText}
+            FORM
+            PRINT
+        `;
+        browserPrint.printTagged(selectedPrinter, 'CPCL', cpclCommands, undefined, (result) => {
+            if (result.success) {
+                console.log('Printing succeeded');
+                alert('Printing successful!');
+            } else {
+                console.error('Printing failed');
+                alert('Printing failed. Please try again.');
+            }
+        });
+    } else {
+        console.error('No printer selected');
+        alert('No printer selected. Please check the printer connection.');
     }
 });
 
@@ -27,18 +42,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultElement = document.getElementById('result');
 
     checkPrinterBtn.addEventListener('click', () => {
-        fetch('/api/checkPrinter')
-            .then(response => response.json())
-            .then(data => {
-                if (data.message) {
-                    resultElement.textContent = data.message;
-                } else if (data.error) {
-                    resultElement.textContent = data.error;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                resultElement.textContent = 'An error occurred while checking the printer connection.';
-            });
+        findPrinter();
+        if (selectedPrinter) {
+            resultElement.textContent = 'Printer is connected';
+        } else {
+            resultElement.textContent = 'Printer is not connected';
+        }
     });
 });
