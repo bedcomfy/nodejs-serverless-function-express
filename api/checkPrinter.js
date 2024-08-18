@@ -9,7 +9,7 @@ app.use(express.json());
 app.get('/api/checkPrinter', (req, res) => {
     const printer = new ThermalPrinter({
         type: PrinterTypes.ZEBRA,
-        interface: 'USB',
+        interface: 'bluetooth',
         characterSet: 'SLOVENIA',
         removeSpecialCharacters: false,
         lineCharacter: '=',
@@ -31,11 +31,6 @@ app.get('/api/checkPrinter', (req, res) => {
         }
         printer.disconnect();
     });
-});
-
-// Endpoint to handle printing
-app.post('/api/print', async (req, res) => {
-    // ... (existing printing code remains the same)
 });
 
 module.exports = app;
