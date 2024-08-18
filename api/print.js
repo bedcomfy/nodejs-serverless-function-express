@@ -21,26 +21,40 @@ app.post('/api/print', async (req, res) => {
             },
         });
         
-        // Connect to the printer
-        printer.init();
-        
-        // Create the CPCL commands
-        const cpclCommands = `
-            ! 0 200 200 210 1
-            TEXT 4 0 30 40 ${input}
-            FORM
-            PRINT
-        `;
-        
-        // Send the CPCL commands to the printer
-        printer.execute(cpclCommands);
-        
-        // Disconnect from the printer
-        printer.beep();
-        printer.cut();
-        printer.close();
-        
-        res.status(200).json({ message: 'Printing successful' });
+        // Initialize the printer
+        printer.isPrinterConnected((err, isConnected) => {
+            if (err) {
+                console.error('Error:', err);
+                res.status(500).json({ error: 'An error occurred while connecting to the printer' });
+                return;
+            }
+            
+            if (!isConnected) {
+                console.error('Printer is not connected');
+                res.status(500).json({ error: 'Printer is not connected' });
+                return;
+            }
+            
+            // Create the CPCL commands
+            const cpclCommands = `
+                ! 0 200 200 210 1
+                TEXT 4 0 30 40 ${input}
+                FORM
+                PRINT
+            `;
+            
+            // Send the CPCL commands to the printer
+            printer.println(cpclCommands);
+            
+            // Disconnect from the printer
+            printer.beep();
+            printer.cut();
+            printer.execute(() => {
+                printer.clear();
+                printer.disconnect();
+                res.status(200).json({ message: 'Printing successful' });
+            });
+        });
     } catch (error) {
         console.error('Error:', error);
         res.status(500).json({ error: 'An error occurred while printing' });
