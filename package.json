@@ -8,6 +8,7 @@
     "typescript": "^4.7.3"
   },
   "dependencies": {
+    "express": "^4.19.2",
     "node-thermal-printer": "^4.4.2"
   }
 }
